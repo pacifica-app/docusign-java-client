@@ -1,8 +1,9 @@
 package com.docusign.esign.api;
 
-import com.sun.jersey.api.client.GenericType;
-
 import com.docusign.esign.client.ApiException;
+
+import javax.ws.rs.core.GenericType;
+
 import com.docusign.esign.client.ApiClient;
 import com.docusign.esign.client.Configuration;
 import com.docusign.esign.client.Pair;
@@ -36,7 +37,7 @@ public class AuthenticationApi {
   /// <summary>
   /// Gets login information for a specified user. Retrieves login information for a specified user. Each account that is associated with the login credentials is listed. You can use the returned information to determine whether a user is authenticated and select an account to use in future operations.  \n\nThe `baseUrl` property, returned in the response, is used in all future API calls as the base of the request URL. The `baseUrl` property contains the DocuSign server, the API version, and the `accountId` property that is used for the login. This request uses your DocuSign credentials to retrieve the account information.
   /// </summary>
-  public class LoginOptions
+  public static class LoginOptions
   {
     
     private String loginSettings = null;
@@ -152,8 +153,10 @@ public class AuthenticationApi {
     String[] localVarAuthNames = new String[] {  };
 
     
-    GenericType<LoginInformation> localVarReturnType = new GenericType<LoginInformation>() {};
-    return apiClient.invokeAPI(localVarPath, "GET", localVarQueryParams, localVarPostBody, localVarHeaderParams, localVarFormParams, localVarAccept, localVarContentType, localVarAuthNames, localVarReturnType);
+		GenericType<LoginInformation> localVarReturnType = new GenericType<LoginInformation>() {
+		};
+		return apiClient.invokeAPI(localVarPath, "GET", localVarQueryParams, localVarPostBody, localVarHeaderParams,
+				localVarFormParams, localVarAccept, localVarContentType, localVarAuthNames, localVarReturnType);
     
   }
   

@@ -93,7 +93,7 @@ public class SdkUnitTests {
         {
         
             AuthenticationApi authApi = new AuthenticationApi();
-            AuthenticationApi.LoginOptions loginOps = authApi.new LoginOptions();
+            AuthenticationApi.LoginOptions loginOps = new AuthenticationApi.LoginOptions();
             loginOps.setApiPassword("true");
             loginOps.setIncludeAccountIdGuid("true");
             LoginInformation loginInfo = authApi.login(loginOps);
@@ -189,7 +189,7 @@ public class SdkUnitTests {
             
             AuthenticationApi authApi = new AuthenticationApi();
             
-            AuthenticationApi.LoginOptions loginOptions = authApi.new LoginOptions();
+            AuthenticationApi.LoginOptions loginOptions = new AuthenticationApi.LoginOptions();
             loginOptions.setApiPassword("true");
             loginOptions.setIncludeAccountIdGuid("true");
             LoginInformation loginInfo = authApi.login(loginOptions);
@@ -264,7 +264,7 @@ public class SdkUnitTests {
             
             AuthenticationApi authApi = new AuthenticationApi();
             
-            AuthenticationApi.LoginOptions loginOptions = authApi.new LoginOptions();
+            AuthenticationApi.LoginOptions loginOptions = new AuthenticationApi.LoginOptions();
             loginOptions.setApiPassword("true");
             loginOptions.setIncludeAccountIdGuid("true");
             LoginInformation loginInfo = authApi.login(loginOptions);

@@ -1,45 +1,47 @@
 package com.docusign.esign.client;
 
-import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.datatype.joda.*;
-import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
-
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.GenericType;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.client.filter.LoggingFilter;
-import com.sun.jersey.api.client.WebResource.Builder;
-
-import com.sun.jersey.multipart.FormDataMultiPart;
-import com.sun.jersey.multipart.file.FileDataBodyPart;
-
-import javax.ws.rs.core.Response.Status.Family;
-import javax.ws.rs.core.MediaType;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.TimeZone;
-
-import java.net.URLEncoder;
-
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-
+import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TimeZone;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status.Family;
+
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientResponse;
+import org.glassfish.jersey.client.JerseyClient;
+import org.glassfish.jersey.client.JerseyClientBuilder;
+import org.glassfish.jersey.filter.LoggingFilter;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
+
+import com.docusign.esign.client.auth.ApiKeyAuth;
 import com.docusign.esign.client.auth.Authentication;
 import com.docusign.esign.client.auth.HttpBasicAuth;
-import com.docusign.esign.client.auth.ApiKeyAuth;
 import com.docusign.esign.client.auth.OAuth;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-07-18T18:09:34.017-07:00")
 public class ApiClient {
@@ -48,13 +50,13 @@ public class ApiClient {
   private boolean debugging = false;
   private int connectionTimeout = 0;
 
-  private Client httpClient;
+  private JerseyClient httpClient;
   private ObjectMapper objectMapper;
 
   private Map<String, Authentication> authentications;
 
   private int statusCode;
-  private Map<String, List<String>> responseHeaders;
+  private MultivaluedMap<String, Object> responseHeaders;
 
   private DateFormat dateFormat;
 
@@ -98,11 +100,12 @@ public class ApiClient {
   public ApiClient rebuildHttpClient() {
     // Add the JSON serialization support to Jersey
     JacksonJsonProvider jsonProvider = new JacksonJsonProvider(objectMapper);
-    DefaultClientConfig conf = new DefaultClientConfig();
-    conf.getSingletons().add(jsonProvider);
-    Client client = Client.create(conf);
+    ClientConfig conf = new ClientConfig();
+    conf.register(jsonProvider);
+    JerseyClient client = JerseyClientBuilder.createClient(conf);
     if (debugging) {
-      client.addFilter(new LoggingFilter());
+    	client.register(LoggingFilter.class);
+      //client.a.addFilter(new LoggingFilter());
     }
     this.httpClient = client;
     return this;
@@ -130,11 +133,6 @@ public class ApiClient {
     return httpClient;
   }
 
-  public ApiClient setHttpClient(Client httpClient) {
-    this.httpClient = httpClient;
-    return this;
-  }
-
   public String getBasePath() {
     return basePath;
   }
@@ -154,7 +152,7 @@ public class ApiClient {
   /**
    * Gets the response headers of the previous request
    */
-  public Map<String, List<String>> getResponseHeaders() {
+  public MultivaluedMap<String, Object> getResponseHeaders() {
     return responseHeaders;
   }
 
@@ -284,17 +282,6 @@ public class ApiClient {
   public int getConnectTimeout() {
     return connectionTimeout;
   }
-
-  /**
-   * Set the connect timeout (in milliseconds).
-   * A value of 0 means no timeout, otherwise values must be between 1 and
-   * {@link Integer#MAX_VALUE}.
-   */
-   public ApiClient setConnectTimeout(int connectionTimeout) {
-     this.connectionTimeout = connectionTimeout;
-     httpClient.setConnectTimeout(connectionTimeout);
-     return this;
-   }
 
   /**
    * Get the date format used to parse/format date parameters.
@@ -530,7 +517,7 @@ public class ApiClient {
     return url.toString();
   }
 
-  private ClientResponse getAPIResponse(String path, String method, List<Pair> queryParams, Object body, Map<String, String> headerParams, Map<String, Object> formParams, String accept, String contentType, String[] authNames) throws ApiException {
+  private Response getAPIResponse(String path, String method, List<Pair> queryParams, Object body, Map<String, String> headerParams, Map<String, Object> formParams, String accept, String contentType, String[] authNames) throws ApiException {
     if (body != null && !formParams.isEmpty()) {
       throw new ApiException(500, "Cannot have body and form params");
     }
@@ -538,11 +525,11 @@ public class ApiClient {
     updateParamsForAuth(authNames, queryParams, headerParams);
 
     final String url = buildUrl(path, queryParams);
-    Builder builder;
+    Invocation.Builder builder;
     if (accept == null) {
-      builder = httpClient.resource(url).getRequestBuilder();
+      builder = httpClient.target(url).request();
     } else {
-      builder = httpClient.resource(url).accept(accept);
+      builder = httpClient.target(url).request(accept);
     }
 
     for (String key : headerParams.keySet()) {
@@ -557,18 +544,18 @@ public class ApiClient {
     // Add DocuSign Tracking Header
     builder = builder.header("X-DocuSign-SDK", "Java");
 
-    ClientResponse response = null;
+    Response response = null;
 
     if ("GET".equals(method)) {
-      response = (ClientResponse) builder.get(ClientResponse.class);
+      response = builder.get();
     } else if ("POST".equals(method)) {
-      response = builder.type(contentType).post(ClientResponse.class, serialize(body, contentType, formParams));
+      response = builder.post(Entity.entity(serialize(body, contentType, formParams), contentType));
     } else if ("PUT".equals(method)) {
-      response = builder.type(contentType).put(ClientResponse.class, serialize(body, contentType, formParams));
+      response = builder.put(Entity.entity(serialize(body, contentType, formParams), contentType));
     } else if ("DELETE".equals(method)) {
-      response = builder.type(contentType).delete(ClientResponse.class, serialize(body, contentType, formParams));
+      response = builder.delete();
     } else if ("PATCH".equals(method)) {
-      response = builder.type(contentType).header("X-HTTP-Method-Override", "PATCH").post(ClientResponse.class, serialize(body, contentType, formParams));
+			response = builder.header("X-HTTP-Method-Override", "PATCH").post(Entity.entity(serialize(body, contentType, formParams), contentType));
     }
     else {
       throw new ApiException(500, "unknown method type " + method);
@@ -592,24 +579,24 @@ public class ApiClient {
    */
    public <T> T invokeAPI(String path, String method, List<Pair> queryParams, Object body, Map<String, String> headerParams, Map<String, Object> formParams, String accept, String contentType, String[] authNames, GenericType<T> returnType) throws ApiException {
 
-    ClientResponse response = getAPIResponse(path, method, queryParams, body, headerParams, formParams, accept, contentType, authNames);
+    Response response = getAPIResponse(path, method, queryParams, body, headerParams, formParams, accept, contentType, authNames);
 
     statusCode = response.getStatusInfo().getStatusCode();
     responseHeaders = response.getHeaders();
 
-    if(response.getStatusInfo() == ClientResponse.Status.NO_CONTENT) {
+    if(response.getStatus() == 204) {
       return null;
     } else if (response.getStatusInfo().getFamily() == Family.SUCCESSFUL) {
       if (returnType == null)
         return null;
       else
-        return response.getEntity(returnType);
+        return response.readEntity(returnType);
     } else {
       String message = "error";
       String respBody = null;
       if (response.hasEntity()) {
         try {
-          respBody = response.getEntity(String.class);
+          respBody = response.readEntity(String.class);
           message = respBody;
         } catch (RuntimeException e) {
           // e.printStackTrace();
